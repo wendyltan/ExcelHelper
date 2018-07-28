@@ -12,9 +12,9 @@ import java.util.Scanner;
 
 public class Basic {
 
-    private static final int DEFAULT_COLUMN_WIDTH_SMALL= 12;
-    private static final int DEFAULT_COLUMN_WIDTH_MEDIUM = 18;
-    private static final int DEFAULT_COLUMN_WIDTH_LARGE = 24;
+    public static final int DEFAULT_COLUMN_WIDTH_SMALL= 12;
+    public static final int DEFAULT_COLUMN_WIDTH_MEDIUM = 18;
+    public static final int DEFAULT_COLUMN_WIDTH_LARGE = 24;
 
     //use medium size as default
     private int defaultColumnWidth = DEFAULT_COLUMN_WIDTH_MEDIUM;
@@ -27,7 +27,7 @@ public class Basic {
      * @return
      * @throws IOException
      */
-    private List<HSSFRow> readAll(InputStream inputStream,boolean isFilter) throws IOException {
+    public List<HSSFRow> readAll(InputStream inputStream,boolean isFilter) throws IOException {
         HSSFWorkbook workbook = new HSSFWorkbook(inputStream);
         HSSFSheet sheet = workbook.getSheetAt(0);
         List<HSSFRow> matchRows = new ArrayList<>();
@@ -55,7 +55,7 @@ public class Basic {
                 searchArray[i] = inputArray[i].split(" ")[1];
             }
 
-            //adding header row
+            //add header row
             matchRows.add(sheet.getRow(0));
             for (int j=1;j<sheet.getLastRowNum();j++){
 
@@ -78,7 +78,7 @@ public class Basic {
 
                 }
                 if (counter==number-invalidHeaderCount){
-                    //satisfy all condition or part ofcondition valid
+                    //satisfy all condition or part of condition is valid
                     matchRows.add(row);
                 }
             }
@@ -93,15 +93,36 @@ public class Basic {
     }
 
     /**
+     * Create a new workbook given the inputstream
+     * the inputstream can be null
+     * @param in
+     * @return
+     * @throws IOException
+     */
+    private HSSFWorkbook createWorkBook(InputStream in) throws IOException {
+        if (in==null){
+            //brand new file
+            return new HSSFWorkbook();
+        }else{
+            //might be used to add or overwrite
+            return new HSSFWorkbook(in);
+        }
+    }
+
+    /**
      * Use row list to create a new excel file and write content
      * @param excelTitle
      * @param rows
      * @throws IOException
      */
-    private void writeExcel(String excelTitle,List<HSSFRow> rows) throws IOException {
+    public void writeExcel(String excelTitle,List<HSSFRow> rows) throws IOException {
         File file = new File(excelTitle+".xls");
-        HSSFWorkbook book= new HSSFWorkbook();
+        //do not use the constructor with inputStream
+        //while you want to create a total new file instead of adding
+        HSSFWorkbook book= createWorkBook(null);
         HSSFSheet sheet = book.createSheet(excelTitle);
+
+        //poi HSSFCellStyle can only be created up to 4000.So use a pool to reuse object.
         HashMap<Integer,HSSFCellStyle> pool = new HashMap<>();
 
         int colNumber = rows.get(0).getLastCellNum();
@@ -111,13 +132,13 @@ public class Basic {
             HSSFRow newRow = sheet.createRow(i);
             HSSFRow oldRow = rows.get(i);
 
-            //we only have to get the col number
+            //get the col number
             for(int j=0;j<colNumber;j++){
                 HSSFCell newCell = newRow.createCell(j);
                 HSSFCell oldCell = oldRow.getCell(j);
                 HSSFCellStyle cellStyle;
 
-                //setting the cell style for header row and other rows
+                //set the cell style for header row and other rows
                 if (i==0){
                     cellStyle = book.createCellStyle();
                     HSSFFont hssfFont = book.createFont();
@@ -132,15 +153,11 @@ public class Basic {
                     cellStyle = pool.get(2);
                 }
 
-
-
                 cellStyle.setAlignment(HSSFCellStyle.ALIGN_CENTER);
                 newCell.setCellStyle(cellStyle);
 
 
-
-
-                //caculate the loggest string to set column cell width
+                //caculate the longgest string to set column cell width
                 if (oldCell!=null){
                     String value = oldCell.getRichStringCellValue().getString();
                     newCell.setCellValue(value);
@@ -162,15 +179,15 @@ public class Basic {
      * Set the default column width
      * @param width
      */
-    private void setDefaultColumnWidth(int width){
+    public void setDefaultColumnWidth(int width){
         defaultColumnWidth = width;
     }
 
     /**
-     * print out each row in IDE console
+     * Print out each row in IDE console
      * @param rows
      */
-    private void printInfo(List<HSSFRow> rows){
+    public void printInfo(List<HSSFRow> rows){
         if(rows.isEmpty()) {
             System.out.println("0 match!");
         }else{
@@ -231,24 +248,4 @@ public class Basic {
         return -1;
     }
 
-    /**
-     * Testing main
-     * @param args
-     */
-    public static void main(String[] args){
-        File file = new File("zwxz.xls");
-        FileInputStream in;
-        Basic basic = new Basic();
-        basic.setDefaultColumnWidth(Basic.DEFAULT_COLUMN_WIDTH_LARGE);
-        List<HSSFRow> matchRows;
-        try {
-            in = new FileInputStream(file);
-            matchRows = basic.readAll(in,true);
-            basic.printInfo(matchRows);
-            basic.writeExcel("公务员",matchRows);
-        } catch (IOException e) {
-            System.out.println("Something's wrong!");
-            e.printStackTrace();
-        }
-    }
 }
