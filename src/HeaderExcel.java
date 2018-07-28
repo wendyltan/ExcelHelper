@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Scanner;
 
 
-public class Basic {
+public class HeaderExcel {
 
     public static final int DEFAULT_COLUMN_WIDTH_SMALL= 12;
     public static final int DEFAULT_COLUMN_WIDTH_MEDIUM = 18;
@@ -19,16 +19,25 @@ public class Basic {
     //use medium size as default
     private int defaultColumnWidth = DEFAULT_COLUMN_WIDTH_MEDIUM;
 
+    //the read write stream of the the excel file
+    private String excelName;
+    private File excel;
+
+
+    public HeaderExcel(File file) throws FileNotFoundException {
+        this.excel = file;
+        this.excelName = file.getName();
+    }
+
     /**
      * Read excel file given the inputstream and choose whether
      * to use condition to filter some rows
-     * @param inputStream
      * @param isFilter
      * @return
      * @throws IOException
      */
-    public List<HSSFRow> readAll(InputStream inputStream,boolean isFilter) throws IOException {
-        HSSFWorkbook workbook = new HSSFWorkbook(inputStream);
+    public List<HSSFRow> readAll(boolean isFilter) throws IOException {
+        HSSFWorkbook workbook = createWorkBook(new FileInputStream(excel));
         HSSFSheet sheet = workbook.getSheetAt(0);
         List<HSSFRow> matchRows = new ArrayList<>();
         if (isFilter){
@@ -176,6 +185,57 @@ public class Basic {
     }
 
     /**
+     * Insert new row instead of overwrite the excel
+     * @param rows
+     * @throws IOException
+     */
+    public void insertExcel(List<HSSFRow> rows) throws IOException {
+        System.out.println("Please enter the excelName and sheet name you want to insert");
+        Scanner scanner = new Scanner(System.in);
+        String content = scanner.nextLine();
+        String excelTitle = content.split(" ")[0];
+        String sheetName = content.split(" ")[1];
+
+        File file = new File(excelTitle+".xls");
+        if(file.exists()){
+            HSSFWorkbook book= createWorkBook(new FileInputStream(file));
+            HSSFSheet sheet = book.getSheet(sheetName);
+
+
+            if (sheet!=null){
+                int lastRowNum = sheet.getLastRowNum();
+                int colNum = rows.get(0).getLastCellNum();
+                //create new row after the last old row
+                for (int i=1;i<rows.size();i++){
+                    HSSFRow newRow = sheet.createRow(lastRowNum+i);
+                    //get original cell style of the excel to be inserted
+                    HSSFCellStyle style = sheet.getRow(lastRowNum).getCell(0).getCellStyle();
+                    for (int j=0;j<colNum;j++){
+                        HSSFCell newCell = newRow.createCell(j);
+                        HSSFCell oldCell = rows.get(i).getCell(j);
+
+                        if (oldCell!=null){
+                            newCell.setCellValue(oldCell.getRichStringCellValue());
+                        }else{
+                            newCell.setCellValue("   ");
+                        }
+                        newCell.setCellStyle(style);
+
+                    }
+                }
+                book.write(new FileOutputStream(file));
+                System.out.println("Insert row success!");
+            }else{
+                System.out.println("Wrong sheet name!");
+            }
+        }else{
+            System.out.println("No such file!");
+        }
+
+
+    }
+
+    /**
      * Set the default column width
      * @param width
      */
@@ -246,6 +306,10 @@ public class Basic {
         }
         System.out.println("Col header not found!");
         return -1;
+    }
+
+    public String getCurrentExcelName(){
+        return this.excelName;
     }
 
 }

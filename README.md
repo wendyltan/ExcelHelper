@@ -13,8 +13,11 @@
 
 ## Edit history
 
-- 18/7/27 : Support basic read and conditional read, write into new excel and print out in console.
+- 18/7/28 : Add insert excel function
+- 18/7/27 : Support headerExcel read and conditional read, write into new excel and print out in console.
 
+## Noted
+目前只适用于带有表头的excel表格，既可以插入也可以覆盖。当然插入现在只能在尾端插入
 
 ## Lisence
 
